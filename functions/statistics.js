@@ -119,7 +119,7 @@ async function statistics(page) {
         parseInt(homeValue.replace("%", "")) >=
         parseInt(awayValue.replace("%", ""))
       ) {
-        if (homeResults.W >= 2) {
+        if (homeResults.W >= 3) {
           if (
             parseInt(homeValue.replace("%", "")) -
               parseInt(awayValue.replace("%", "")) >=
@@ -320,7 +320,7 @@ async function statistics(page) {
         parseInt(homeValue.replace("%", ""))
       ) {
         //Avoid consecutive 5 wins
-        if (awayResults.W >= 2) {
+        if (awayResults.W >= 3) {
           if (
             parseInt(awayValue.replace("%", "")) -
               parseInt(homeValue.replace("%", "")) >=
