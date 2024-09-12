@@ -50,7 +50,7 @@ const gameLinks = [];
     // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
     // today
     const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football?sort=1&time=${time +
-      1}`;
+      3}`;
     // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
 
     // Open tomorrow's URL
