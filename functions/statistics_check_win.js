@@ -171,145 +171,14 @@ async function statistics(page) {
                   return null;
                 });
   
-                await page.evaluate(() => {
-                  const items = document.querySelectorAll(".m-type-item");
-                  for (let item of items) {
-                    if (item.textContent.trim() === "H2H") {
-                      item.click(); // Click on the "H2H" item
-                      return true; // Indicate the item was found and clicked
-                    }
-                  }
-                  return false; // Indicate the item wasn't found
-                });
-  
-                // Wait for the DOM to load
-                await page.waitForSelector(".sr-leaguepositionform__wrapper", {
-                  timeout: 10000
-                });
-  
-                // Extract home match data
-                const homeMatchData = await page.evaluate(() => {
-                  const matches = [];
-                  document
-                    .querySelectorAll(
-                      ".sr-last-matches.sr-last-matches--left .sr-last-matches__match"
-                    )
-                    .forEach(match => {
-                      const result = match
-                        .querySelector(".sr-last-matches__wdl span")
-                        .textContent.trim();
-                      const score = match
-                        .querySelector(".sr-last-matches__score")
-                        .textContent.trim();
-                      const scoreExtraStatus = match.querySelector(
-                        ".sr-last-matches__score-extra-status"
-                      )
-                        ? match
-                            .querySelector(".sr-last-matches__score-extra-status")
-                            .textContent.trim()
-                        : "";
-  
-                      let [homeGoals, awayGoals] = score.split(":").map(Number);
-                      if (scoreExtraStatus.includes("AP")) {
-                        homeGoals = "0";
-                        awayGoals = "0";
-                      }
-  
-                      matches.push({ result, homeGoals, awayGoals });
-                    });
-                  return matches;
-                });
-  
-                // Analyze and count home matches, total number of goals (TNOG)
-                let count_homeMatchesTNOG = 0;
-                homeMatchData.forEach(match => {
-                  const { result, homeGoals, awayGoals } = match;
-                  if (result === "L") {
-                    if (homeGoals > awayGoals) {
-                      if (awayGoals > 0) {
-                        count_homeMatchesTNOG++;
-                      }
-                    } else {
-                      if (homeGoals > 0) {
-                        count_homeMatchesTNOG++;
-                      }
-                    }
-                  } else if (result === "D") {
-                    if (homeGoals > 0 || awayGoals > 0) {
-                      count_homeMatchesTNOG++;
-                    }
-                  } else {
-                    count_homeMatchesTNOG++;
-                  }
-                });
-  
-                // Extract away match data
-                const awayMatchData = await page.evaluate(() => {
-                  const matches = [];
-                  document
-                    .querySelectorAll(
-                      ".sr-last-matches.sr-last-matches--right .sr-last-matches__match"
-                    )
-                    .forEach(match => {
-                      const result = match
-                        .querySelector(".sr-last-matches__wdl span")
-                        .textContent.trim();
-                      const score = match
-                        .querySelector(".sr-last-matches__score")
-                        .textContent.trim();
-                      const scoreExtraStatus = match.querySelector(
-                        ".sr-last-matches__score-extra-status"
-                      )
-                        ? match
-                            .querySelector(".sr-last-matches__score-extra-status")
-                            .textContent.trim()
-                        : "";
-  
-                      let [homeGoals, awayGoals] = score.split(":").map(Number);
-                      if (scoreExtraStatus.includes("AP")) {
-                        homeGoals = "0";
-                        awayGoals = "0";
-                      }
-  
-                      matches.push({ result, homeGoals, awayGoals });
-                    });
-                  return matches;
-                });
-  
-                // Analyze and count home matches, total number of goals (TNOG)
-                let count_awayMatchesTNOG = 0;
-                awayMatchData.forEach(match => {
-                  const { result, homeGoals, awayGoals } = match;
-                  if (result === "L") {
-                    if (homeGoals > awayGoals) {
-                      if (awayGoals > 0) {
-                        count_awayMatchesTNOG++;
-                      }
-                    } else {
-                      if (homeGoals > 0) {
-                        count_awayMatchesTNOG++;
-                      }
-                    }
-                  } else if (result === "D") {
-                    if (homeGoals > 0 || awayGoals > 0) {
-                      count_awayMatchesTNOG++;
-                    }
-                  } else {
-                    count_awayMatchesTNOG++;
-                  }
-                });
-  
-                //Total matches with goals
-                let TNOG = count_homeMatchesTNOG + count_awayMatchesTNOG;
-  
-                console.log("Total Home Matches TNOG: ", count_homeMatchesTNOG);
-                console.log("Total Away Matches TNOG: ", count_awayMatchesTNOG);
-                if (TNOG >= 7) {
-                  const pageUrl = await page.url();
-                  return pageUrl;
-                } else {
-                  return null;
-                }
+                // if (result) {
+                //   console.log("Found a row with wins > 10:");
+                // } 
+                // if(awayResults.W === 0 && awayResults.D === 0){
+                //   return null;
+                // }
+                const pageUrl = await page.url();
+                return pageUrl
               }
             }
           }
@@ -368,12 +237,12 @@ async function statistics(page) {
   
                 // if (result) {
                 //   console.log("Found a row with wins > 10:");
-                // }
+                // } 
                 // if(homeResults.W === 0 && homeResults.D === 0){
                 //   return null;
                 // }
                 const pageUrl = await page.url();
-                return pageUrl;
+                return pageUrl
               }
             }
           }
@@ -385,6 +254,5 @@ async function statistics(page) {
       return;
     }
   }
-  
+
   module.exports = statistics;
-  

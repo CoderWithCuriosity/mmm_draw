@@ -10,7 +10,7 @@ async function statistics(page) {
     try {
       // Wait for the DOM to load
       await page.waitForSelector(".sr-leaguepositionform__wrapper", {
-        timeout: 30000
+        timeout: 10000
       });
       await page.waitForSelector(
         ".sr-procvaltext__component-value.sr-procvaltext__component-value-medium",
@@ -119,7 +119,7 @@ async function statistics(page) {
           parseInt(homeValue.replace("%", "")) >=
           parseInt(awayValue.replace("%", ""))
         ) {
-          if (homeResults.W >= 2) {
+          if (homeResults.W >= 3) {
             if (
               parseInt(homeValue.replace("%", "")) -
                 parseInt(awayValue.replace("%", "")) >=
@@ -142,31 +142,6 @@ async function statistics(page) {
               // Wait for the table to load (adjust the selector if necessary)
               await page.waitForSelector(".sr-livetable__table");
   
-              // Evaluate the script in the context of the page
-              const result = await page.evaluate(() => {
-                // Get all rows that have the class 'srt-base-1-is-active'
-                const rows = Array.from(
-                  document.querySelectorAll("tr.srm-dataRow")
-                );
-  
-                for (const row of rows) {
-                  // Check if this row contains the 'srt-base-1-is-active' class in any <td>
-                  const activeTd = row.querySelector("td.srt-base-1-is-active");
-                  if (activeTd) {
-                    // Find the <td> that contains the number of wins
-                    const winsTd = row.querySelector('td[title="win"]');
-                    if (winsTd) {
-                      const wins = parseInt(winsTd.textContent.trim(), 10);
-                      if (wins > 10) {
-                        // Return the HTML of the matching row
-                        return row.innerHTML;
-                      }
-                    }
-                  }
-                }
-                return null;
-              });
-  
               await page.evaluate(() => {
                 const items = document.querySelectorAll(".m-type-item");
                 for (let item of items) {
@@ -183,8 +158,8 @@ async function statistics(page) {
                 timeout: 10000
               });
   
-              // Extract home match data
-              const homeMatchData = await page.evaluate(() => {
+               // Extract home match data
+               const homeMatchData = await page.evaluate(() => {
                 const matches = [];
                 document
                   .querySelectorAll(
@@ -216,6 +191,10 @@ async function statistics(page) {
                 return matches;
               });
   
+              //Focus on the goals conceded
+              let count_goals_conceded_home = 0;
+              //Focus on Away because has higher form or equal form. Count Wins where goals is greater than 2
+              let count_win_with_two_or_more_goal = 0;
               // Analyze and count home matches, total number of goals (TNOG)
               let count_homeMatchesTNOG = 0;
               homeMatchData.forEach(match => {
@@ -224,18 +203,30 @@ async function statistics(page) {
                   if (homeGoals > awayGoals) {
                     if (awayGoals > 0) {
                       count_homeMatchesTNOG++;
+                      count_goals_conceded_home += awayGoals;
                     }
                   } else {
                     if (homeGoals > 0) {
                       count_homeMatchesTNOG++;
+                      count_goals_conceded_home += homeGoals;
                     }
                   }
                 } else if (result === "D") {
                   if (homeGoals > 0 || awayGoals > 0) {
                     count_homeMatchesTNOG++;
+                    count_goals_conceded_home += homeGoals;
                   }
                 } else {
                   count_homeMatchesTNOG++;
+                  const goals = homeGoals > awayGoals ? homeGoals : awayGoals;
+                  if (goals >= 2) {
+                    count_win_with_two_or_more_goal++;
+                  }
+                  if(homeGoals > awayGoals){
+                    count_goals_conceded_home += awayGoals;
+                  } else {
+                    count_goals_conceded_home += homeGoals;
+                  }
                 }
               });
   
@@ -272,6 +263,10 @@ async function statistics(page) {
                 return matches;
               });
   
+              //Focus on the goals conceded
+              let count_goals_conceded_away = 0;
+              //Focus on away to ensure it has conceeded more than 1 goal
+              let count_loss_with_one_or_more_goal = 0;
               // Analyze and count home matches, total number of goals (TNOG)
               let count_awayMatchesTNOG = 0;
               awayMatchData.forEach(match => {
@@ -280,91 +275,60 @@ async function statistics(page) {
                   if (homeGoals > awayGoals) {
                     if (awayGoals > 0) {
                       count_awayMatchesTNOG++;
+                      count_goals_conceded_away += awayGoals;
                     }
                   } else {
                     if (homeGoals > 0) {
                       count_awayMatchesTNOG++;
+                      count_goals_conceded_away += homeGoals;
                     }
+                  }
+                  const goals = homeGoals < awayGoals ? homeGoals : awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
                   }
                 } else if (result === "D") {
                   if (homeGoals > 0 || awayGoals > 0) {
                     count_awayMatchesTNOG++;
+                    count_goals_conceded_away += awayGoals;
+                  }
+                  const goals = awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
                   }
                 } else {
                   count_awayMatchesTNOG++;
+                  const goals = homeGoals > awayGoals ? homeGoals : awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
+                  }
+                  if(awayGoals > homeGoals){
+                    count_goals_conceded_away += homeGoals;
+                  } else {
+                    count_goals_conceded_away += awayGoals;
+                  }
                 }
               });
   
+              
               //Total matches with goals
               let TNOG = count_homeMatchesTNOG + count_awayMatchesTNOG;
   
-              // console.log(
-              //   `Passed!!!\nHome League Position: ${homeLeaguePosition}\nAway League Position: ${awayLeaguePosition}\nHome Form: ${homeValue}\nAway Form: ${awayValue}\nHome Results: ${homeMatchData}\nAway Results: ${awayMatchData}\nHome Matches TNOG: ${count_homeMatchesTNOG}\nAway Matches TNOG: ${count_awayMatchesTNOG}\nTotal Home Matches TNOG: ${TNOG}`
-              // );
-              console.log("Total Home Matches TNOG: ", count_homeMatchesTNOG);
-              console.log("Total Away Matches TNOG: ", count_awayMatchesTNOG);
+              console.log("Wins with two or more goals: ", count_win_with_two_or_more_goal);
+              console.log("Loses with two or more goals: ", count_loss_with_one_or_more_goal);
+              console.log("Number of Conceded Goal in last 5 Matches (Home): ", count_goals_conceded_home);
+              console.log("Number of Conceded Goal in last 5 Matches (Away): ", count_goals_conceded_away);
+              
               if (count_homeMatchesTNOG >= 3 && count_awayMatchesTNOG >= 3) {
                 if (TNOG >= 7) {
-                  //Clicking on Over 2.5 m-nav-item
-                  await page.evaluate(() => {
-                    const items = document.querySelectorAll(".m-text");
-                    for (let item of items) {
-                      if (item.textContent.trim() === "Markets") {
-                        item.click(); // Click on the "H2H" item
-                        return true; // Indicate the item was found and clicked
-                      }
-                    }
-                    return false; // Indicate the item wasn't found
-                  });
-  
-                  //Clicking on all to select All to pick the over 2.5
-                  await page.evaluate(() => {
-                    const items = document.querySelectorAll(
-                      ".m-sport-group-item.m-snap-nav-item"
-                    );
-                    for (let item of items) {
-                      if (item.textContent.trim() === "All") {
-                        item.click(); // Click on the "H2H" item
-                        return true; // Indicate the item was found and clicked
-                      }
-                    }
-                    return false; // Indicate the item wasn't found
-                  });
-  
-                  // Clicking the over 2.5 option if available
-                  // Wait for the odds table to load (use a suitable selector)
-                  await page.waitForSelector(".m-table-row", {
-                    timeout: 3000
-                  });
-  
-                  // Check if the "2.5" element is available
-                  const isOver25Available = await page.evaluate(() => {
-                    const oddsRow = document.querySelectorAll(".m-table-row");
-                    for (let odds_row of oddsRow) {
-                      const title = odds_row.querySelectorAll(
-                        ".m-outcome-combo-title em"
-                      );
-                      for (let outcome of title) {
-                        if (outcome.textContent.trim() === "2.5") {
-                          return true;
-                        }
-                      }
-                    }
-                    return false;
-                  });
-  
-                  if (isOver25Available) {
-                    // Click the corresponding outcome for "over 2.5" (you can adjust which cell to click)
-                    await page.evaluate(() => {
-                      const over25Element = document.querySelectorAll(
-                        ".m-outcome-combo.m-detail-outcome-default"
-                      )[0]; // Adjust index if needed
-                      over25Element.click();
-                    });
+                  if (
+                    count_win_with_two_or_more_goal >= 3 &&
+                    count_loss_with_one_or_more_goal >= 3
+                  ) {
+                    const pageUrl = await page.url();
+                    return pageUrl;
                   }
-  
-                  const pageUrl = await page.url();
-                  return pageUrl;
+                  return null;
                 } else {
                   return null;
                 }
@@ -378,7 +342,7 @@ async function statistics(page) {
           parseInt(homeValue.replace("%", ""))
         ) {
           //Avoid consecutive 5 wins
-          if (awayResults.W >= 2) {
+          if (awayResults.W >= 3) {
             if (
               parseInt(awayValue.replace("%", "")) -
                 parseInt(homeValue.replace("%", "")) >=
@@ -400,31 +364,6 @@ async function statistics(page) {
               // Wait for the table to load (adjust the selector if necessary)
               await page.waitForSelector(".sr-livetable__table");
   
-              // Evaluate the script in the context of the page
-              const result = await page.evaluate(() => {
-                // Get all rows that have the class 'srt-base-1-is-active'
-                const rows = Array.from(
-                  document.querySelectorAll("tr.srm-dataRow")
-                );
-  
-                for (const row of rows) {
-                  // Check if this row contains the 'srt-base-1-is-active' class in any <td>
-                  const activeTd = row.querySelector("td.srt-base-1-is-active");
-                  if (activeTd) {
-                    // Find the <td> that contains the number of wins
-                    const winsTd = row.querySelector('td[title="win"]');
-                    if (winsTd) {
-                      const wins = parseInt(winsTd.textContent.trim(), 10);
-                      if (wins > 10) {
-                        // Return the HTML of the matching row
-                        return row.innerHTML;
-                      }
-                    }
-                  }
-                }
-                return null;
-              });
-  
               await page.evaluate(() => {
                 const items = document.querySelectorAll(".m-type-item");
                 for (let item of items) {
@@ -441,6 +380,10 @@ async function statistics(page) {
                 timeout: 10000
               });
   
+              //Focus on the goals conceded
+              let count_goals_conceded_home = 0;
+              //Focus on away to ensure it has conceeded more than 1 goal
+              let count_loss_with_one_or_more_goal = 0;
               // Extract home match data
               const homeMatchData = await page.evaluate(() => {
                 const matches = [];
@@ -482,18 +425,38 @@ async function statistics(page) {
                   if (homeGoals > awayGoals) {
                     if (awayGoals > 0) {
                       count_homeMatchesTNOG++;
+                      count_goals_conceded_home += awayGoals;
                     }
                   } else {
                     if (homeGoals > 0) {
                       count_homeMatchesTNOG++;
+                      count_goals_conceded_home += homeGoals;
                     }
+                  }
+                  const goals = homeGoals < awayGoals ? homeGoals : awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
                   }
                 } else if (result === "D") {
                   if (homeGoals > 0 || awayGoals > 0) {
                     count_homeMatchesTNOG++;
+                    count_goals_conceded_home += homeGoals;
+                  }
+                  const goals = homeGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
                   }
                 } else {
                   count_homeMatchesTNOG++;
+                  const goals = homeGoals > awayGoals ? homeGoals : awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
+                  }
+                  if(homeGoals > awayGoals){
+                    count_goals_conceded_home += awayGoals;
+                  } else {
+                    count_goals_conceded_home += homeGoals;
+                  }
                 }
               });
   
@@ -530,104 +493,69 @@ async function statistics(page) {
                 return matches;
               });
   
+              //Focus on the goals conceded
+              let count_goals_conceded_away = 0;
               // Analyze and count home matches, total number of goals (TNOG)
               let count_awayMatchesTNOG = 0;
+              //Focus on Away because has higher form or equal form. Count Wins where goals is greater than 2
+              let count_win_with_two_or_more_goal = 0;
               awayMatchData.forEach(match => {
                 const { result, homeGoals, awayGoals } = match;
                 if (result === "L") {
                   if (homeGoals > awayGoals) {
                     if (awayGoals > 0) {
                       count_awayMatchesTNOG++;
+                      count_goals_conceded_away += awayGoals;
                     }
                   } else {
                     if (homeGoals > 0) {
                       count_awayMatchesTNOG++;
+                      count_goals_conceded_away += homeGoals;
                     }
                   }
                 } else if (result === "D") {
                   if (homeGoals > 0 || awayGoals > 0) {
                     count_awayMatchesTNOG++;
+                    count_goals_conceded_away += awayGoals;
+                  }
+                  const goals = awayGoals;
+                  if (goals > 0) {
+                    count_loss_with_one_or_more_goal++;
                   }
                 } else {
                   count_awayMatchesTNOG++;
+                  const goals = homeGoals > awayGoals ? homeGoals : awayGoals;
+                  if (goals >= 2) {
+                    count_win_with_two_or_more_goal++;
+                  }
+                  if(awayGoals > homeGoals){
+                    count_goals_conceded_away += homeGoals;
+                  } else {
+                    count_goals_conceded_away += awayGoals;
+                  }
                 }
               });
   
               //Total matches with goals
               let TNOG = count_homeMatchesTNOG + count_awayMatchesTNOG;
   
-              // console.log(
-              //   `Passed!!!\nHome League Position: ${homeLeaguePosition}\nAway League Position: ${awayLeaguePosition}\nHome Form: ${homeValue}\nAway Form: ${awayValue}\nHome Results: ${homeMatchData}\nAway Results: ${awayMatchData}\nHome Matches TNOG: ${count_homeMatchesTNOG}\nAway Matches TNOG: ${count_awayMatchesTNOG}\nTotal Home Matches TNOG: ${TNOG}`
-              // );
-              console.log("Total Home Matches TNOG: ", count_homeMatchesTNOG);
-              console.log("Total Away Matches TNOG: ", count_awayMatchesTNOG);
+              console.log("Wins with two or more goals: ", count_win_with_two_or_more_goal);
+              console.log("Loses with two or more goals: ", count_loss_with_one_or_more_goal);
+              console.log("Number of Conceded Goal in last 5 Matches (Home): ", count_goals_conceded_home);
+              console.log("Number of Conceded Goal in last 5 Matches (Away): ", count_goals_conceded_away);
               if (count_homeMatchesTNOG >= 3 && count_awayMatchesTNOG >= 3) {
                 if (TNOG >= 7) {
-                  //Clicking on Over 2.5 m-nav-item
-                  await page.evaluate(() => {
-                    const items = document.querySelectorAll(".m-text");
-                    for (let item of items) {
-                      if (item.textContent.trim() === "Markets") {
-                        item.click(); // Click on the "H2H" item
-                        return true; // Indicate the item was found and clicked
-                      }
-                    }
-                    return false; // Indicate the item wasn't found
-                  });
-  
-                  //Clicking on all to select All to pick the over 2.5
-                  await page.evaluate(() => {
-                    const items = document.querySelectorAll(
-                      ".m-sport-group-item.m-snap-nav-item"
-                    );
-                    for (let item of items) {
-                      if (item.textContent.trim() === "All") {
-                        item.click(); // Click on the "H2H" item
-                        return true; // Indicate the item was found and clicked
-                      }
-                    }
-                    return false; // Indicate the item wasn't found
-                  });
-  
-                  // Clicking the over 2.5 option if available
-                  // Wait for the odds table to load (use a suitable selector)
-                  await page.waitForSelector(".m-table-row", {
-                    timeout: 3000
-                  });
-  
-                  // Check if the "2.5" element is available
-                  const isOver25Available = await page.evaluate(() => {
-                    const oddsRow = document.querySelectorAll(".m-table-row");
-                    for (let odds_row of oddsRow) {
-                      const title = odds_row.querySelectorAll(
-                        ".m-outcome-combo-title em"
-                      );
-                      for (let outcome of title) {
-                        if (outcome.textContent.trim() === "2.5") {
-                          return true;
-                        }
-                      }
-                    }
-                    return false;
-                  });
-  
-                  if (isOver25Available) {
-                    // Click the corresponding outcome for "over 2.5" (you can adjust which cell to click)
-                    await page.evaluate(() => {
-                      const over25Element = document.querySelectorAll(
-                        ".m-outcome-combo.m-detail-outcome-default"
-                      )[0]; // Adjust index if needed
-                      over25Element.click();
-                    });
+                  if (
+                    count_win_with_two_or_more_goal >= 3 &&
+                    count_loss_with_one_or_more_goal >= 3
+                  ) {
+                    const pageUrl = await page.url();
+                    return pageUrl;
                   }
-  
-                  const pageUrl = await page.url();
-                  return pageUrl;
+                  return null;
                 } else {
                   return null;
                 }
-              } else {
-                return null;
               }
             }
           }
