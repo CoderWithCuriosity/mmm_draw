@@ -106,12 +106,12 @@ async function statistics(page) {
       return results;
     });
 
-    if (
-      parseInt(homeValue.replace("%", "")) < 40 &&
-      parseInt(awayValue.replace("%", "")) < 40
-    ) {
-      return;
-    }
+    //   if (
+    //     parseInt(homeValue.replace("%", "")) < 40 &&
+    //     parseInt(awayValue.replace("%", "")) < 40
+    //   ) {
+    //     return;
+    //   }
 
     // Checking if they position is very close
     if (parseInt(homeLeaguePosition) <= parseInt(awayLeaguePosition)) {
@@ -119,7 +119,7 @@ async function statistics(page) {
         parseInt(homeValue.replace("%", "")) >=
         parseInt(awayValue.replace("%", ""))
       ) {
-        if (homeResults.W >= 3) {
+        if (homeResults.W >= 2) {
           if (
             parseInt(homeValue.replace("%", "")) -
               parseInt(awayValue.replace("%", "")) >=
@@ -157,6 +157,9 @@ async function statistics(page) {
             await page.waitForSelector(".sr-leaguepositionform__wrapper", {
               timeout: 10000
             });
+
+            //Focus on away to ensure it has conceeded more than 1 goal
+            let count_loss_with_one_or_more_goal = 0;
 
             // Extract home match data
             const homeMatchData = await page.evaluate(() => {
@@ -209,7 +212,7 @@ async function statistics(page) {
                   if (homeGoals > 0) {
                     count_homeMatchesTNOG++;
                   }
-                  conceded_goals_away += parseInt(awayGoals);
+                  conceded_goals_home += parseInt(awayGoals);
                 }
               } else if (result === "D") {
                 if (homeGoals > 0 || awayGoals > 0) {
@@ -269,8 +272,6 @@ async function statistics(page) {
 
             let conceded_goals_away = 0;
 
-            //Focus on away to ensure it has conceeded more than 1 goal
-            let count_loss_with_one_or_more_goal = 0;
             // Analyze and count home matches, total number of goals (TNOG)
             let count_awayMatchesTNOG = 0;
             awayMatchData.forEach(match => {
@@ -333,24 +334,15 @@ async function statistics(page) {
               "Loses with two or more goals: ",
               count_loss_with_one_or_more_goal
             );
-            if (count_homeMatchesTNOG >= 3 && count_awayMatchesTNOG >= 3) {
-              if (TNOG >= 7) {
-                if (
-                  count_win_with_two_or_more_goal >= 3 &&
-                  count_loss_with_one_or_more_goal >= 3
-                ) {
-                  if(Math.abs(conceded_goals_home - conceded_goals_away) >= 5){
-                    const pageUrl = await page.url();
-                    return pageUrl;
-                  }
-                  return null;
-                }
-                return null;
-              } else {
-                return null;
-              }
+            if (Math.abs(conceded_goals_home - conceded_goals_away) >= 5) {
+              const pageUrl = await page.url();
+              return pageUrl;
             }
+            return null;
           }
+          return null;
+        } else {
+          return null;
         }
       }
     } else if (parseInt(awayLeaguePosition) < parseInt(homeLeaguePosition)) {
@@ -359,7 +351,7 @@ async function statistics(page) {
         parseInt(homeValue.replace("%", ""))
       ) {
         //Avoid consecutive 5 wins
-        if (awayResults.W >= 3) {
+        if (awayResults.W >= 2) {
           if (
             parseInt(awayValue.replace("%", "")) -
               parseInt(homeValue.replace("%", "")) >=
@@ -434,6 +426,9 @@ async function statistics(page) {
               return matches;
             });
 
+            let conceded_goals_away = 0;
+            let count_win_with_two_or_more_goal = 0;
+
             // Analyze and count home matches, total number of goals (TNOG)
             let count_homeMatchesTNOG = 0;
             homeMatchData.forEach(match => {
@@ -506,12 +501,12 @@ async function statistics(page) {
               return matches;
             });
 
-            let conceded_goals_away = 0;
+            
 
             // Analyze and count home matches, total number of goals (TNOG)
             let count_awayMatchesTNOG = 0;
             //Focus on Away because has higher form or equal form. Count Wins where goals is greater than 2
-            let count_win_with_two_or_more_goal = 0;
+            
             awayMatchData.forEach(match => {
               const { result, homeGoals, awayGoals } = match;
               if (result === "L") {
@@ -572,24 +567,15 @@ async function statistics(page) {
               "Loses with two or more goals: ",
               count_loss_with_one_or_more_goal
             );
-            if (count_homeMatchesTNOG >= 3 && count_awayMatchesTNOG >= 3) {
-              if (TNOG >= 7) {
-                if (
-                  count_win_with_two_or_more_goal >= 3 &&
-                  count_loss_with_one_or_more_goal >= 3
-                ) {
-                  if(Math.abs(conceded_goals_home - conceded_goals_away) >= 5){
-                    const pageUrl = await page.url();
-                    return pageUrl;
-                  }
-                  return null;
-                }
-                return null;
-              } else {
-                return null;
-              }
+            if (Math.abs(conceded_goals_home - conceded_goals_away) >= 5) {
+              const pageUrl = await page.url();
+              return pageUrl;
             }
+            return null;
           }
+          return null;
+        } else {
+          return null;
         }
       }
     }
