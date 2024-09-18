@@ -319,11 +319,11 @@ async function statistics(page) {
 
             console.log(
               "Number of Conceded Goal in last 5 Matches by (Home): ",
-              count_goals_conceded_home
+              conceded_goals_home
             );
             console.log(
               "Number of Conceded Goal in last 5 Matches by (Away): ",
-              count_goals_conceded_away
+              conceded_goals_away
             );
             console.log(
               "Wins with two or more goals: ",
@@ -555,11 +555,11 @@ async function statistics(page) {
 
             console.log(
               "Number of Conceded Goal in last 5 Matches by (Home): ",
-              count_goals_conceded_home
+              conceded_goals_home
             );
             console.log(
               "Number of Conceded Goal in last 5 Matches by (Away): ",
-              count_goals_conceded_away
+              conceded_goals_away
             );
             console.log(
               "Wins with two or more goals: ",
