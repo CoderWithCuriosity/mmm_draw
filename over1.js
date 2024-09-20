@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const extractMatchInfo = require("./functions/extractMatchInfo");
-const statistics = require("./functions/test_statistics");
+const statistics = require("./functions/new_statistics");
 
 const gameLinks = [];
 
@@ -42,9 +42,9 @@ const gameLinks = [];
     }
 
     // Construct URL
-    // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football?sort=1&time=${time +
-    //   2}`;
-    const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
+    const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football?sort=1&time=${time +
+      1}`;
+    // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
 
     // Open tomorrow's URL
     await page.goto(tomorrowUrl);
