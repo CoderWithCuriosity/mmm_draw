@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const extractMatchInfo = require("./functions/extractMatchInfo");
-const statistics = require("./functions/statistics");
+const statistics = require("./functions/over1_fix");
 
 const gameLinks = [];
 
@@ -10,10 +10,8 @@ const gameLinks = [];
   try {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-
     // Get today's day
     const today = new Date().getDay();
-
     // Define time based on today's day
     let time;
     switch (today) {
@@ -47,6 +45,7 @@ const gameLinks = [];
     const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football?sort=1&time=${time +
       1}`;
     // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
+
     // Open tomorrow's URL
     await page.goto(tomorrowUrl);
 
@@ -67,6 +66,7 @@ const gameLinks = [];
     let count = 0;
     while (true) {
       count++;
+
       // Extract the links
       await scrollUntilElementVisible();
       links = await extractMatchInfo(page);
