@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const extractMatchInfo = require("./functions/extractMatchInfo");
-const statistics = require("./functions/over1");
+const statistics = require("./functions/over1_fix");
 
 const gameLinks = [];
 
