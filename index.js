@@ -1,11 +1,9 @@
 const puppeteer = require("puppeteer");
-const cheerio = require("cheerio");
 const fs = require("fs");
 const extractMatchInfo = require("./functions/extractMatchInfo");
-const statistics = require("./functions/over1_fix");
-
+const statistics = require("./functions/statistics");
+const checkOver1 = require("./functions/checkOver1");
 const gameLinks = [];
-
 (async () => {
   try {
     const browser = await puppeteer.launch({ headless: false });
@@ -13,42 +11,13 @@ const gameLinks = [];
     // Get today's day
     const today = new Date().getDay();
     // Define time based on today's day
-    let time;
-    switch (today) {
-      case 0:
-        time = 0;
-        break; // Sunday
-      case 1:
-        time = 1;
-        break; // Monday
-      case 2:
-        time = 2;
-        break; // Tuesday
-      case 3:
-        time = 3;
-        break; // Wednesday
-      case 4:
-        time = 4;
-        break; // Thursday
-      case 5:
-        time = 5;
-        break; // Friday
-      case 6:
-        time = 6;
-        break; // Saturday
-      default:
-        time = 0;
-        break; // Default to Sunday
-    }
-
+    let time = today > 0 && today < 6 ? today : 0;
     // Construct URL
     const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football?sort=1&time=${time +
       1}`;
     // const tomorrowUrl = `https://www.sportybet.com/ng/m/sport/football/today?source=sport_menu&sort=0`;
-
     // Open tomorrow's URL
     await page.goto(tomorrowUrl);
-
     // Define the scroll function
     const scrollUntilElementVisible = async () => {
       await page.evaluate(() => {
@@ -56,7 +25,6 @@ const gameLinks = [];
       });
       await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second for the page to settle
     };
-
     //Links to open new page
     let links = [];
     //Link to save page that obeys the rule
@@ -66,7 +34,6 @@ const gameLinks = [];
     let count = 0;
     while (true) {
       count++;
-
       // Extract the links
       await scrollUntilElementVisible();
       links = await extractMatchInfo(page);
@@ -76,36 +43,41 @@ const gameLinks = [];
             // Analysis is done here
             const newPage = await browser.newPage();
             newPage.goto(links[i].link);
-            await newPage.waitForNavigation();
-            // Click on stat
             try {
-              await newPage.waitForSelector(".m-icon.m-icon-stat", {
-                timeout: 10000
-              });
-              await newPage.click(".m-icon.m-icon-stat");
+              await newPage.waitForNavigation();
+              // Click on stat
               try {
-                console.log("\n" + links[i].teams);
-                const pageUrl = await statistics(newPage);
-                if(pageUrl != undefined){
-                  gameLinks.push(pageUrl);
+                await newPage.waitForSelector(".m-icon.m-icon-stat", {
+                  timeout: 10000
+                });
+                const isOver1OptionAval = await checkOver1(newPage);
+                if (isOver1OptionAval === true) {
+                  await newPage.click(".m-icon.m-icon-stat");
+                  try {
+                    console.log("\n" + links[i].teams);
+                    const pageUrl = await statistics(newPage);
+                    if (pageUrl != undefined) {
+                      gameLinks.push(pageUrl);
+                    }
+                  } catch (error) {
+                    console.log(error);
+                  }
                 }
               } catch (error) {
                 console.log(error);
               }
+              if (newPage != undefined) {
+                await newPage.close();
+              }
+              obeyLink.push(links[i].link);
             } catch (error) {
-              console.log(error);
+              console.log("Error while waiting for navigation!");
             }
-            if (newPage != undefined) {
-              await newPage.close();
-            }
-            obeyLink.push(links[i].link);
           }
         }
-
         console.log("Total Match scanned: ", obeyLink.length);
         console.log("Game Link Url: ", gameLinks);
       }
-
       await scrollUntilElementVisible();
       const stopLoadMore = await page.$(".bet-load-more-none");
       if (stopLoadMore) {
@@ -120,12 +92,11 @@ const gameLinks = [];
         }
       });
     }
-
     console.log("Game Link Url: ", gameLinks);
     // Write the gameLinks to a text file
-
     await browser.close();
   } catch (error) {
     console.log("An error occurred:", error);
+    process.exit(0);
   }
 })();
